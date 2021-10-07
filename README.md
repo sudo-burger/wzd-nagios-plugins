@@ -1,5 +1,7 @@
 
 ## check_oracle.sh
+Note that 'sqlplus' must be in PATH for this plugin to function.
+
     Usage:
       -H|--host <host>
       -P|--port <port>
