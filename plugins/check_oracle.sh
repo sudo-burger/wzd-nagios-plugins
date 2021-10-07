@@ -41,7 +41,7 @@ usage() {
     -p|--password <db password>
     -w|--warning <warning threshold>
     -c|--critical <critical threshold>
-    -M|--mode [Sst]
+    -M|--mode [dgSst]
       Modes:
       d: number of deadlocks
       g: percent used ASM diskgroup
