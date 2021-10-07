@@ -1,6 +1,6 @@
 
 ## check_oracle.sh
-Usage:
+  Usage:
     -H|--host <host>
     -P|--port <port>
     -S|--SID <SID>
