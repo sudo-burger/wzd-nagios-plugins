@@ -15,7 +15,7 @@ set -f
 # The NPDG requires all output to be to stdout.
 exec 2>&1
 
-PROGNAME=$(basename $0)
+PROGNAME=$(basename "$0")
 DEBUG=1
 
 # Output functions
@@ -63,7 +63,7 @@ function run_sql() {
   local dbuser=$4
   local dbpass=$5
 
-  sqlplus -s $dbuser/$dbpass@$host:$port/$SID << EOF
+  sqlplus -s "$dbuser/$dbpass@$host:$port/$SID" << EOF
 set heading off
 set linesize 10000
 set long 10000000
@@ -77,7 +77,7 @@ EOF
 
 # Trim leading and trailing spaces.
 function trim() {
-  echo $*|sed -e 's/^[[:space:]]*//; s/[[:space:]]*$//'
+  echo "$*"|sed -e 's/^[[:space:]]*//; s/[[:space:]]*$//'
 }
 
 # Abort if the input is not numeric.
@@ -85,7 +85,7 @@ function assert_is_number() {
   if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
     return
   else
-    err "[$FUNCNAME] Not a number: $1; callstack: ${FUNCNAME[*]}"
+    err "[${FUNCNAME[0]}] Not a number: $1; callstack: ${FUNCNAME[*]}"
   fi
 }
 
@@ -96,8 +96,8 @@ function assert_is_number() {
 OPTIONS=H:P:S:u:p:w:c:M:t:g:h
 LONGOPTS=host:,port:,SID:,user:,password:,warning:,critical:,mode:,tablespace:,asm-diskgroup:,help
 
-PARSED_ARGUMENTS=$(getopt -n $PROGNAME -o $OPTIONS --long $LONGOPTS -- "$@")
-[ $? -eq 0 ] || usage
+PARSED_ARGUMENTS=$(getopt -n "$PROGNAME" -o "$OPTIONS" --long "$LONGOPTS" -- "$@") \
+    || usage
 
 host="HOST"
 port="1521"
@@ -109,10 +109,9 @@ warning=0
 critical=0
 out=""
 status=""
-performance=""
 tablespace="UNKNOWN"
 
-eval set -- $PARSED_ARGUMENTS
+eval set -- "$PARSED_ARGUMENTS"
 while : ; do
   case "$1" in
     -H|--host) host=$2; shift 2 ;;
@@ -175,7 +174,7 @@ case $mode in
       from
         v\$asm_diskgroup
       where
-        name = '"$diskgroup"';"
+        name = \'$diskgroup\';"
     ;;
   S)
     # Sessions: used percent of max
@@ -240,7 +239,7 @@ case $mode in
       from
         D0
       where
-        tablespace_name = '"$tablespace"';"
+        tablespace_name = \'$tablespace\';"
     ;;
   *)
     xout "Unknown mode: $mode"
@@ -252,12 +251,12 @@ esac
 # "performance data" section. See:
 # https://assets.nagios.com/downloads/nagioscore/docs/nagioscore/4/en/perfdata.html
 #
-out=$(run_sql $host $port $SID $dbuser $dbpass "$sql")
-[ $? -eq 0 ] || err "Unable to run SQL: $out"
+out=$(run_sql "$host" "$port" "$SID" "$dbuser" "$dbpass" "$sql") \
+    || err "Unable to run SQL: $out"
 
 # Validate the query's output.
 #
-out=$(trim $out)
+out=$(trim "$out")
 assert_is_number "$out"
 
 # Exit status as required by NPDG.
