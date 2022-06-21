@@ -60,7 +60,7 @@ usage() {
   exit "$exit_code"
 } 
 
-# SQL Helper.
+# SQL helper. Basically a wrapper for the Oracle client.
 #
 function run_sql() {
   local host="$1"
@@ -68,6 +68,7 @@ function run_sql() {
   local SID="$3"
   local dbuser="$4"
   local dbpass="$5"
+  local sql="$6"
 
   sqlplus -s "$dbuser/$dbpass@$host:$port/$SID" << EOF
 set heading off
@@ -77,7 +78,7 @@ set serveroutput on
 set termout on
 whenever oserror exit 68;
 whenever sqlerror exit sql.sqlcode;
-$6
+$sql
 EOF
 }
 
