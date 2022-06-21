@@ -8,6 +8,9 @@
 # Nagios performance data format:
 # https://assets.nagios.com/downloads/nagioscore/docs/nagioscore/4/en/perfdata.html
 
+# Exit immediately if a command fails.
+set -e
+# Treat the expansion of undefined variables as an error.
 set -u
 # Turn off globbing, which would cause SQL code to be interpreted as bash code.
 set -f
@@ -16,14 +19,16 @@ set -f
 exec 2>&1
 
 PROGNAME=$(basename "$0")
-DEBUG=1
+
+# DEBUG = 1 enables the debug() function.
+DEBUG=0
 
 # Output functions
 function xout() {
   echo "$*"
 }
 function debug() {
-  [[ ${DEBUG} -eq 1 ]] && echo "DEBUG: $*"
+  [[ "$DEBUG" -eq 1 ]] && echo "DEBUG: $*"
 }
 function warn() {
   echo "WARNING: $*"
@@ -33,6 +38,7 @@ function err() {
   exit 3
 }
 usage() {
+  local exit_code="${1:-0}"
   xout "$PROGNAME
     -H|--host <host>
     -P|--port <port>
@@ -51,17 +57,18 @@ usage() {
     -g|--asm-diskgroup <ASM diskgroup name>
     -t|--tablespace <tablespace name>
     -h|--help"
-  exit 3
+  exit "$exit_code"
 } 
 
-# SQL Helper.
+# SQL helper. Basically a wrapper for the Oracle client.
 #
 function run_sql() {
-  local host=$1
-  local port=$2
-  local SID=$3
-  local dbuser=$4
-  local dbpass=$5
+  local host="$1"
+  local port="$2"
+  local SID="$3"
+  local dbuser="$4"
+  local dbpass="$5"
+  local sql="$6"
 
   sqlplus -s "$dbuser/$dbpass@$host:$port/$SID" << EOF
 set heading off
@@ -71,7 +78,7 @@ set serveroutput on
 set termout on
 whenever oserror exit 68;
 whenever sqlerror exit sql.sqlcode;
-$6
+$sql
 EOF
 }
 
@@ -97,7 +104,7 @@ OPTIONS=H:P:S:u:p:w:c:M:t:g:h
 LONGOPTS=host:,port:,SID:,user:,password:,warning:,critical:,mode:,tablespace:,asm-diskgroup:,help
 
 PARSED_ARGUMENTS=$(getopt -n "$PROGNAME" -o "$OPTIONS" --long "$LONGOPTS" -- "$@") \
-    || usage
+    || usage 3
 
 host="HOST"
 port="1521"
@@ -124,9 +131,9 @@ while : ; do
     -M|--mode)  mode=$2; shift 2 ;;
     -t|--tablespace)  tablespace=$2; shift 2 ;;
     -g|--asm-diskgroup) diskgroup=$2; shift 2 ;;
-    -h|--help) usage ;;
+    -h|--help) usage 0;;
     --) shift; break;;
-     *) usage ;; 
+     *) usage 1;;
   esac
 done
 
@@ -243,7 +250,7 @@ case $mode in
     ;;
   *)
     xout "Unknown mode: $mode"
-    usage 
+    usage 1
     ;;
 esac
 
