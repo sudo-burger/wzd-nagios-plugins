@@ -11,5 +11,5 @@ test: plugins/*
 	@for f in $(test_file); do \
 		$$f; \
 	done;
-
+	shellcheck plugins/check_oracle.sh
 
